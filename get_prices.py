@@ -60,7 +60,7 @@ for i in range(len(df)):
     #print(df.iloc[i,1])
     # https://www.albion-online-data.com/api/v2/stats/prices/T4_BAG,T5_BAG.json?locations=Caerleon,Bridgewatch&qualities=2
     if df.iloc[i,1] is not None:
-        url = 'https://www.albion-online-data.com/api/v2/stats/prices/{}.json'.format(df.iloc[i,1])
+        url = 'https://www.albion-online-data.com/api/v2/stats/prices/{}?qualities=0,1,2,3,4.json'.format(df.iloc[i,1])
         print('Getting price for: '+url)
         response = requests.get(url)
         data = json.loads(response.text)
