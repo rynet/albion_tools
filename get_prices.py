@@ -49,7 +49,7 @@ worksheet.update([df.columns.values.tolist()] + df.values.tolist())
 # fetch prices
 ## make a new data frame for the output format
 outSheet = spreadsheet.worksheet('Master Price Sheet')
-outDF = pd.DataFrame(outSheet.get('A:I'))
+outDF = pd.DataFrame(outSheet.get('A:K'))
 outDF.columns = outDF.iloc[0] # setting top row as headers
 outDF = outDF[1:] # ignoring type row as header
 outDF = outDF[0:0] # empty the existing table
@@ -75,11 +75,11 @@ for i in range(len(df)):
             db.commit()
             # add to sheet
             outStr = str(df.iloc[i,0])+str(x['city'])+str(x['quality'])
-            sql2 = "SELECT (select sell_price from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)  order by pricecreated desc limit 1 ) as sell_price, (select buy_price from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day) order by pricecreated desc limit 1 ) as buy_price , (select avg(sell_price) from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as avg_sell_price, (select avg(buy_price) from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as avg_buy_price"
-            val2 = (x['item_id'], x['city'], x['quality'], x['item_id'], x['city'], x['quality'], x['item_id'], x['city'], x['quality'], x['item_id'], x['city'], x['quality'])
+            sql2 = "SELECT (select sell_price from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)  order by pricecreated desc limit 1 ) as sell_price, (select buy_price from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day) order by pricecreated desc limit 1 ) as buy_price , (select avg(sell_price) from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as avg_sell_price, (select avg(buy_price) from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as avg_buy_price, (select pricecreated from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as sell_price_age, (select pricecreated from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as buy_price_age"
+            val2 = (x['item_id'], x['city'], x['quality'], x['item_id'], x['city'], x['quality'], x['item_id'], x['city'], x['quality'], x['item_id'], x['city'], x['quality'], x['item_id'], x['city'], x['quality'], x['item_id'], x['city'], x['quality'])
             cur2.execute(sql2, val2)
             result = cur2.fetchall()
-            outDF.loc[len(outDF.index)] = [outStr, df.iloc[i,0], df.iloc[i,1], x['quality'], x['city'], str(result[0]['sell_price']), str(result[0]['buy_price']), str(result[0]['avg_sell_price']), str(result[0]['avg_buy_price'])]
+            outDF.loc[len(outDF.index)] = [outStr, df.iloc[i,0], df.iloc[i,1], x['quality'], x['city'], str(result[0]['sell_price']), str(result[0]['buy_price']), str(result[0]['avg_sell_price']), str(result[0]['avg_buy_price']), result[0]['sell_price_age'], result[0]['buy_price_age']]
             #outDF.loc[len(outDF.index)] = [outStr, df.iloc[i,0], df.iloc[i,1], x['quality'], x['city'], x['sell_price_min'], x['buy_price_max']] # write to dataframe without averages - old method
 
 # write final dataframe back to sheet
