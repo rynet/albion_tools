@@ -20,7 +20,7 @@ db = mysql.connector.connect(
 
 # open up sheet
 SHEET_ID = '1ALs5IvuNrql6AxYuEB4aLQFghBDJ3NGNsdzhkCxekqQ'
-gc = gspread.service_account('e:/aarow-and-co-2e8195ad989c.json')
+gc = gspread.service_account(os.environ.get('token'))
 spreadsheet = gc.open_by_key(SHEET_ID)
 worksheet = spreadsheet.worksheet('Manifest of Items')
 
