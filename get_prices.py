@@ -14,7 +14,8 @@ db = mysql.connector.connect(
   host = os.environ.get('db_host'),
   user = os.environ.get('db_user'),
   password = os.environ.get('db_pass'),
-  database ="albionDB"
+  database ="albionDB",
+  auth_plugin='mysql_native_password'
 )
 
 # open up sheet
