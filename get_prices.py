@@ -67,9 +67,10 @@ for i in range(len(df)):
         # only pull the price if we haven't already pulled it this run
         for x in data:
             # add to database
-            sql = "INSERT INTO prices (itemTechnicalName, city, quality, sell_price, buy_price, sell_price_min, sell_price_max, buy_price_min, buy_price_max, pricecreated) values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-            values = (x['item_id'], x['city'], x['quality'], x['sell_price_min'], x['buy_price_max'], x['sell_price_min'], x['sell_price_max'], x['buy_price_min'], x['buy_price_max'], datetime.now())
-            cur.execute(sql, values)
+            if x['sell_price_min'] != 0 and x['buy_price_max'] != 0:
+                sql = "INSERT INTO prices (itemTechnicalName, city, quality, sell_price, buy_price, sell_price_min, sell_price_max, buy_price_min, buy_price_max) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                values = (x['item_id'], x['city'], x['quality'], x['sell_price_min'], x['buy_price_max'], x['sell_price_min'], x['sell_price_max'], x['buy_price_min'], x['buy_price_max'])
+                cur.execute(sql, values)
         time.sleep(.1)
 # write changes to database
 db.commit()

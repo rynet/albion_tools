@@ -36,18 +36,7 @@ cur = db.cursor(dictionary=True)
 # regenerate current price database
 ## create a temp table to fill up
 print("Writing new best available price database...")
-sql = """create table if not exists new_bestAvailablePrice (
-	itemTechnicalName varchar(256),
-    itemName varchar(256),
-    city varchar(128),
-    quality int,
-    sell_price int,
-    buy_price int,
-    avg_sell_price int,
-    avg_buy_price int,
-    sell_price_age datetime,
-    buy_price_age datetime
-)"""
+sql = "create temporary table new_bestAvailablePrice like bestAvailablePrice"
 cur.execute(sql)
 db.commit()
 
@@ -55,10 +44,17 @@ db.commit()
 
 cur.execute("select * from vw_itemManifest")
 result = cur.fetchall()
-
+# switch to nolock mode
+cur.execute("SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED")
 ## update price entries for manifest items
 for x in result:
-    sql = "SELECT (select sell_price from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)  order by pricecreated desc limit 1 ) as sell_price, (select buy_price from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day) order by pricecreated desc limit 1 ) as buy_price , (select avg(sell_price) from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as avg_sell_price, (select avg(buy_price) from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as avg_buy_price, (select pricecreated from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day) order by pricecreated desc limit 1) as sell_price_age, (select pricecreated from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day) order by pricecreated desc limit 1) as buy_price_age"
+    sql = """SELECT 
+        (select sell_price from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)  order by pricecreated desc limit 1 ) as sell_price
+        , (select buy_price from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day) order by pricecreated desc limit 1 ) as buy_price
+        , (select avg(sell_price) from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as avg_sell_price
+        , (select avg(buy_price) from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day)) as avg_buy_price
+        , (select pricecreated from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.sell_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day) order by pricecreated desc limit 1) as sell_price_age
+        , (select pricecreated from albionDB.prices p where p.itemTechnicalName = %s and p.city = %s and p.quality = %s and p.buy_price <> 0 and pricecreated >= date_add(curdate(),interval -7 day) order by pricecreated desc limit 1) as buy_price_age"""
     val = (x['itemTechnicalName'], x['city'], x['quality'], x['itemTechnicalName'], x['city'], x['quality'], x['itemTechnicalName'], x['city'], x['quality'], x['itemTechnicalName'], x['city'], x['quality'], x['itemTechnicalName'], x['city'], x['quality'], x['itemTechnicalName'], x['city'], x['quality'])
     cur.execute(sql, val)
     res2 = cur.fetchall()
@@ -66,12 +62,13 @@ for x in result:
     val = (x['itemTechnicalName'], x['itemName'], x['city'], x['quality'], res2[0]['sell_price'], res2[0]['buy_price'], res2[0]['avg_sell_price'], res2[0]['avg_buy_price'], res2[0]['sell_price_age'], res2[0]['buy_price_age'])
     cur.execute(sql, val)
 db.commit()
+cur.execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ") #reenable locking
 
 ## drop the old table
-print("Replacing old best available price table...")
-cur.execute("drop table bestAvailablePrice")
+print("Replacing values in best available price table...")
+cur.execute("delete from bestAvailablePrice")
 db.commit()
-cur.execute("rename table new_bestAvailablePrice to bestAvailablePrice")
+cur.execute("insert into bestAvailablePrice select * from new_bestAvailablePrice")
 db.commit()
 
 # write current price database to spreadsheet 
