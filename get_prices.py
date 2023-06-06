@@ -34,6 +34,8 @@ df = df = pd.DataFrame(worksheet.get('A:B'))
 df.columns = df.iloc[0] # setting top row as headers
 df = df[1:] # ignoring type row as header
 
+cur = db.cursor(dictionary=True)
+
 # grab list of items to fetch, and update their technical names from the database
 i = 0
 while i < df.shape[0]:
@@ -41,9 +43,9 @@ while i < df.shape[0]:
         #print(df.iloc[i,0])
         sql = 'select * from items where itemName = "{}"'.format(df.iloc[i,0])
         cur.execute(sql)
-        res = cur.fetchone()
-        if res is not None:
-            df.iloc[i,1] = res['itemTechnicalName']
+        res = cur.fetchall()
+        if res[0] is not None:
+            df.iloc[i,1] = res[0]['itemTechnicalName']
             #print(res["itemTechnicalName"])
     i+=1
 
